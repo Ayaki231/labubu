@@ -2,68 +2,108 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>Простой 3D куб с Three.js</title>
-  <style>
-    body { margin: 0; overflow: hidden; }
-    canvas { display: block; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>3D Трюки Telegram WebApp</title>
+  <style>html, body { margin:0; padding:0; overflow:hidden; background:#fff; } canvas { display:block; }</style>
 </head>
 <body>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
   <script>
-    // Создаём сцену, камеру, рендерер
+    window.Telegram.WebApp.ready();
+
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(
-      75, window.innerWidth/window.innerHeight, 0.1, 1000
-    );
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({antialias:true});
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    // Создаём куб
-    const geometry = new THREE.BoxGeometry();
-    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
-
-    camera.position.z = 5;
-
-    // Анимация вращения куба
-    function animate() {
-      requestAnimationFrame(animate);
-      cube.rotation.x += 0.01;
-      cube.rotation.y += 0.01;
-      renderer.render(scene, camera);
-    }
-    animate();
-
-    // Обработчик клика по кубу
-    // Настраиваем raycaster для "клика"
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
-
-    function onClick(event) {
-      // Преобразуем координаты мыши в нормализованные [-1, 1]
-      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-      raycaster.setFromCamera(mouse, camera);
-
-      const intersects = raycaster.intersectObjects([cube]);
-      if (intersects.length > 0) {
-        // При клике меняем цвет куба на случайный
-        cube.material.color.setHex(Math.random() * 0xffffff);
-      }
-    }
-
-    window.addEventListener('click', onClick, false);
-
-    // Обработка изменения размера окна
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth/window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
+
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(1,1,1);
+    scene.add(light);
+
+    let model = null;
+    let t = 0;
+    let isPerforming = false;
+    let trickAngle = 0;
+    let targetAngle = 0;
+    let currentTrick = null;
+
+    const tricks = ["backflip","frontflip","rotate180","rotateMinus180","diagonalRight","diagonalLeft"];
+
+    const loader = new THREE.GLTFLoader();
+    loader.load(
+      'labubu.glb',
+      (gltf) => {
+        model = gltf.scene;
+        model.position.set(0,0,0);
+        model.scale.set(1,1,1);
+        scene.add(model);
+        camera.position.z = 2;
+      },
+      undefined,
+      (err) => {
+        console.error("Ошибка загрузки:", err);
+        const geom = new THREE.BoxGeometry();
+        const mat = new THREE.MeshBasicMaterial({color:0xff00ff});
+        model = new THREE.Mesh(geom, mat);
+        scene.add(model);
+        camera.position.z = 5;
+      }
+    );
+
+    window.addEventListener('click', () => {
+      if (!isPerforming && model) {
+        currentTrick = tricks[Math.floor(Math.random()*tricks.length)];
+        isPerforming = true;
+        trickAngle = 0;
+
+        targetAngle = ["rotate180","rotateMinus180"].includes(currentTrick) ? Math.PI : Math.PI*2;
+
+        // Отправим событие в Telegram
+        window.Telegram.WebApp.sendData(JSON.stringify({ action: "trickStarted", trick: currentTrick }));
+      }
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const speed = 0.05;
+      if (model) {
+        if (!isPerforming) {
+          t += 0.05;
+          model.rotation.y = Math.sin(t)*0.3;
+          model.position.y = Math.abs(Math.sin(t))*0.2;
+        } else {
+          trickAngle += speed;
+          switch(currentTrick) {
+            case "backflip": model.rotation.x += speed; break;
+            case "frontflip": model.rotation.x -= speed; break;
+            case "rotate180": model.rotation.y += speed; break;
+            case "rotateMinus180": model.rotation.y -= speed; break;
+            case "diagonalRight":
+              model.rotation.x += speed;
+              model.rotation.z += speed;
+              break;
+            case "diagonalLeft":
+              model.rotation.x += speed;
+              model.rotation.z -= speed;
+              break;
+          }
+          if (trickAngle >= targetAngle) {
+            isPerforming = false;
+            model.rotation.set(0,0,0);
+          }
+        }
+      }
+      renderer.render(scene, camera);
+    }
+    animate();
   </script>
 </body>
 </html>
