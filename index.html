@@ -2,40 +2,68 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Простейший кликер</title>
+  <title>Простой 3D куб с Three.js</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin-top: 100px;
-    }
-    #clickButton {
-      font-size: 24px;
-      padding: 20px 40px;
-      cursor: pointer;
-    }
-    #count {
-      margin-top: 20px;
-      font-size: 32px;
-      font-weight: bold;
-    }
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
   </style>
 </head>
 <body>
-  <h1>Кликер в Телеграм Web App</h1>
-  <button id="clickButton">Кликни меня!</button>
-  <div id="count">Клики: 0</div>
-
+  <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
   <script>
-    let count = 0;
-    const countEl = document.getElementById('count');
-    const button = document.getElementById('clickButton');
+    // Создаём сцену, камеру, рендерер
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(
+      75, window.innerWidth/window.innerHeight, 0.1, 1000
+    );
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
 
-    button.onclick = () => {
-      count++;
-      countEl.textContent = 'Клики: ' + count;
-    };
+    // Создаём куб
+    const geometry = new THREE.BoxGeometry();
+    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    const cube = new THREE.Mesh(geometry, material);
+    scene.add(cube);
+
+    camera.position.z = 5;
+
+    // Анимация вращения куба
+    function animate() {
+      requestAnimationFrame(animate);
+      cube.rotation.x += 0.01;
+      cube.rotation.y += 0.01;
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // Обработчик клика по кубу
+    // Настраиваем raycaster для "клика"
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    function onClick(event) {
+      // Преобразуем координаты мыши в нормализованные [-1, 1]
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+
+      const intersects = raycaster.intersectObjects([cube]);
+      if (intersects.length > 0) {
+        // При клике меняем цвет куба на случайный
+        cube.material.color.setHex(Math.random() * 0xffffff);
+      }
+    }
+
+    window.addEventListener('click', onClick, false);
+
+    // Обработка изменения размера окна
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth/window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
   </script>
 </body>
 </html>
