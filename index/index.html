@@ -1,39 +1,41 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Лабубу Кликер</title>
-<style>
-  body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-  #labubu-img { width: 150px; transition: transform 0.3s ease; }
-  button { font-size: 20px; padding: 10px 20px; margin-top: 20px; }
-  #click-count { font-size: 24px; margin-top: 15px; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Простейший кликер</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 100px;
+    }
+    #clickButton {
+      font-size: 24px;
+      padding: 20px 40px;
+      cursor: pointer;
+    }
+    #count {
+      margin-top: 20px;
+      font-size: 32px;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
-<h1>Лабубу Кликер</h1>
-<img id="labubu-img" src="https://i.imgur.com/7q5Rb1v.png" alt="Лабубу" />
-<div>
-  <button id="click-btn">Покачать Лабубу!</button>
-</div>
-<div id="click-count">Клики: 0</div>
+  <h1>Кликер в Телеграм Web App</h1>
+  <button id="clickButton">Кликни меня!</button>
+  <div id="count">Клики: 0</div>
 
-<script>
-  let clicks = 0;
-  const labubu = document.getElementById('labubu-img');
-  const count = document.getElementById('click-count');
-  const btn = document.getElementById('click-btn');
+  <script>
+    let count = 0;
+    const countEl = document.getElementById('count');
+    const button = document.getElementById('clickButton');
 
-  btn.onclick = () => {
-    clicks++;
-    count.textContent = `Клики: ${clicks}`;
-    // Анимация качания
-    labubu.style.transform = `rotate(${(Math.random() - 0.5) * 20}deg) translateX(${(Math.random() - 0.5) * 20}px)`;
-    setTimeout(() => {
-      labubu.style.transform = 'none';
-    }, 300);
-  };
-</script>
+    button.onclick = () => {
+      count++;
+      countEl.textContent = 'Клики: ' + count;
+    };
+  </script>
 </body>
 </html>
